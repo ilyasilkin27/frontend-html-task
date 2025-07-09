@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { css } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import logo from '../../assets/logo.png';
@@ -19,14 +19,18 @@ const bottomRoutes = [
 ];
 
 const SidebarContainer = styled.div`
-  width: ${props => (props.opened ? '220px' : '64px')};
+  width: ${props => (props.opened ? '220px' : '72px')};
+  min-width: 72px;
   background: ${props => props.theme.sidebarBg};
   color: ${props => props.theme.text};
   height: 100vh;
   display: flex;
   flex-direction: column;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
   transition: width 0.3s cubic-bezier(.4,0,.2,1);
-  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+  overflow: visible;
+  position: relative;
 `;
 
 const LogoRow = styled.div`
@@ -34,6 +38,7 @@ const LogoRow = styled.div`
   align-items: center;
   padding: 24px 16px 16px 16px;
   gap: 12px;
+  position: relative;
 `;
 
 const LogoImg = styled.img`
@@ -51,16 +56,24 @@ const LogoText = styled.span`
 `;
 
 const ToggleButton = styled.button`
-  margin-left: auto;
-  background: ${props => props.theme.buttonBg};
+  position: absolute;
+  top: 36px;
+  right: -16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.10);
   border: none;
-  border-radius: 8px;
-  padding: 6px 8px;
+  border-radius: 50%;
   cursor: pointer;
-  color: ${props => props.theme.text};
-  transition: background 0.2s;
+  color: #3B82F6;
+  z-index: 10;
+  transition: background 0.2s, color 0.2s;
   &:active {
-    background: ${props => props.theme.buttonBgActive};
+    background: #e2e8f0;
   }
 `;
 
@@ -70,26 +83,44 @@ const NavSection = styled.div`
   flex-direction: column;
   gap: 4px;
   margin-top: 12px;
+  padding: 0 8px;
 `;
 
 const NavItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
   color: ${props => props.active ? props.theme.textActive : props.theme.text};
   background: ${props => props.active ? props.theme.sidebarBgActive : 'transparent'};
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, justify-content 0.2s, min-width 0.2s;
+  min-width: ${props => (props.opened ? 'auto' : '40px')};
+  svg {
+    min-width: 24px;
+    width: 24px;
+    height: 24px;
+    display: block;
+    text-align: center;
+    color: ${props => props.active ? props.theme.textActive : '#b0b8c9'};
+    transition: color 0.2s;
+    margin-right: 0;
+    background: transparent;
+  }
+  justify-content: ${props => (props.opened ? 'flex-start' : 'center')};
+  span {
+    display: ${props => (props.opened ? 'inline' : 'none')};
+    margin-left: ${props => (props.opened ? '12px' : '0')};
+    white-space: nowrap;
+    transition: margin 0.2s;
+  }
   &:hover {
     background: ${props => props.theme.sidebarBgHover};
     color: ${props => props.theme.textHover};
-  }
-  span {
-    opacity: ${props => (props.opened ? 1 : 0)};
-    transition: opacity 0.2s;
-    white-space: nowrap;
+    svg {
+      color: ${props => props.theme.textHover};
+    }
   }
 `;
 
@@ -98,6 +129,7 @@ const BottomSection = styled.div`
   flex-direction: column;
   gap: 4px;
   margin-bottom: 16px;
+  padding: 0 8px;
 `;
 
 const ThemeSwitchButton = styled.button`
@@ -110,18 +142,55 @@ const ThemeSwitchButton = styled.button`
   color: ${props => props.theme.text};
   font-size: 0.95rem;
   transition: background 0.2s;
+  display: ${props => (props.opened ? 'block' : 'none')};
   &:active {
     background: ${props => props.theme.buttonBgActive};
   }
 `;
 
+const AnimatedNavItem = styled(NavItem)`
+  opacity: ${props => (props.visible ? 1 : 0)};
+  transform: translateY(${props => (props.visible ? '0' : '-16px')});
+  transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+  transition-delay: ${props => props.delay || 0}ms;
+`;
+
+const AnimatedBottomItem = styled(NavItem)`
+  opacity: ${props => (props.visible ? 1 : 0)};
+  transform: translateY(${props => (props.visible ? '0' : '16px')});
+  transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+  transition-delay: ${props => props.delay || 0}ms;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+  background-color: ${props => props.theme.divider};
+  margin: 12px 0;
+`;
+
 const Sidebar = ({ color, onToggleTheme }) => {
     const [isOpened, setIsOpened] = useState(true);
     const [activePath, setActivePath] = useState('/');
+    const [showNav, setShowNav] = useState(false);
+    const [showBottom, setShowBottom] = useState(false);
+
+    useEffect(() => {
+        let navTimeout, bottomTimeout;
+        if (isOpened) {
+            navTimeout = setTimeout(() => setShowNav(true), 80);
+            bottomTimeout = setTimeout(() => setShowBottom(true), 200);
+        } else {
+            setShowNav(false);
+            setShowBottom(false);
+        }
+        return () => {
+            clearTimeout(navTimeout);
+            clearTimeout(bottomTimeout);
+        };
+    }, [isOpened]);
 
     const goToRoute = path => {
         setActivePath(path);
-        // тут должен быть рутинг, но пока для примера просто выделяем активный пункт
     };
 
     const toggleSidebar = () => {
@@ -133,36 +202,41 @@ const Sidebar = ({ color, onToggleTheme }) => {
             <LogoRow>
                 <LogoImg src={logo} alt="Logo" />
                 <LogoText opened={isOpened}>TensorFlow</LogoText>
-                <ToggleButton onClick={toggleSidebar} title={isOpened ? 'Свернуть' : 'Развернуть'}>
-                    <FontAwesomeIcon icon={isOpened ? 'angle-left' : 'angle-right'} />
-                </ToggleButton>
             </LogoRow>
+            <ToggleButton onClick={toggleSidebar} title={isOpened ? 'Свернуть' : 'Развернуть'}>
+                <FontAwesomeIcon icon={isOpened ? 'angle-left' : 'angle-right'} />
+            </ToggleButton>
             <NavSection>
-                {routes.map(route => (
-                    <NavItem
+                {routes.map((route, i) => (
+                    <AnimatedNavItem
                         key={route.title}
                         opened={isOpened}
                         active={activePath === route.path}
                         onClick={() => goToRoute(route.path)}
+                        visible={showNav}
+                        delay={i * 60}
                     >
                         <FontAwesomeIcon icon={route.icon} />
                         <span>{route.title}</span>
-                    </NavItem>
+                    </AnimatedNavItem>
                 ))}
             </NavSection>
+            <Divider />
             <BottomSection>
-                {bottomRoutes.map(route => (
-                    <NavItem
+                {bottomRoutes.map((route, i) => (
+                    <AnimatedBottomItem
                         key={route.title}
                         opened={isOpened}
                         active={activePath === route.path}
                         onClick={() => goToRoute(route.path)}
+                        visible={showBottom}
+                        delay={(bottomRoutes.length - i - 1) * 60}
                     >
                         <FontAwesomeIcon icon={route.icon} />
                         <span>{route.title}</span>
-                    </NavItem>
+                    </AnimatedBottomItem>
                 ))}
-                <ThemeSwitchButton onClick={onToggleTheme}>
+                <ThemeSwitchButton onClick={onToggleTheme} opened={isOpened}>
                     Сменить тему
                 </ThemeSwitchButton>
             </BottomSection>
