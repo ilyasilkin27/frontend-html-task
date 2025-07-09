@@ -19,8 +19,8 @@ const bottomRoutes = [
 ];
 
 const SidebarContainer = styled.div`
-  width: ${props => (props.opened ? '220px' : '72px')};
-  min-width: 72px;
+  width: ${props => (props.opened ? '220px' : '96px')};
+  min-width: 96px;
   background: ${props => props.theme.sidebarBg};
   color: ${props => props.theme.text};
   height: 100vh;
@@ -149,17 +149,21 @@ const ThemeSwitchButton = styled.button`
 `;
 
 const AnimatedNavItem = styled(NavItem)`
-  opacity: ${props => (props.visible ? 1 : 0)};
-  transform: translateY(${props => (props.visible ? '0' : '-16px')});
-  transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
-  transition-delay: ${props => props.delay || 0}ms;
+  span {
+    opacity: ${props => (props.visible ? 1 : 0)};
+    transform: translateY(${props => (props.visible ? '0' : '-16px')});
+    transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+    transition-delay: ${props => props.delay || 0}ms;
+  }
 `;
 
 const AnimatedBottomItem = styled(NavItem)`
-  opacity: ${props => (props.visible ? 1 : 0)};
-  transform: translateY(${props => (props.visible ? '0' : '16px')});
-  transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
-  transition-delay: ${props => props.delay || 0}ms;
+  span {
+    opacity: ${props => (props.visible ? 1 : 0)};
+    transform: translateY(${props => (props.visible ? '0' : '16px')});
+    transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+    transition-delay: ${props => props.delay || 0}ms;
+  }
 `;
 
 const Divider = styled.div`
@@ -213,11 +217,11 @@ const Sidebar = ({ color, onToggleTheme }) => {
                         opened={isOpened}
                         active={activePath === route.path}
                         onClick={() => goToRoute(route.path)}
-                        visible={showNav}
                         delay={i * 60}
+                        visible={showNav}
                     >
                         <FontAwesomeIcon icon={route.icon} />
-                        <span>{route.title}</span>
+                        <span visible={showNav}>{route.title}</span>
                     </AnimatedNavItem>
                 ))}
             </NavSection>
@@ -229,11 +233,11 @@ const Sidebar = ({ color, onToggleTheme }) => {
                         opened={isOpened}
                         active={activePath === route.path}
                         onClick={() => goToRoute(route.path)}
-                        visible={showBottom}
                         delay={(bottomRoutes.length - i - 1) * 60}
+                        visible={showBottom}
                     >
                         <FontAwesomeIcon icon={route.icon} />
-                        <span>{route.title}</span>
+                        <span visible={showBottom}>{route.title}</span>
                     </AnimatedBottomItem>
                 ))}
                 <ThemeSwitchButton onClick={onToggleTheme} opened={isOpened}>
